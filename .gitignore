@@ -1,0 +1,47 @@
+# .gitignore for OutlookLinkFixer (.NET/WinForms)
+
+# Build results
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code
+.vscode/
+
+# Rider
+.idea/
+*.sln.iml
+
+# Publish output
+OutlookLinkFixer/OutlookLinkFixer/bin/Release/
+OutlookLinkFixer/OutlookLinkFixer/bin/Debug/
+
+# OS junk
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+
+# NuGet
+*.nupkg
+.nuget/
+
+# Others
+*.pdb
+*.cache
+*.dbmdl
+*.bak
+*.swp
+*.tmp
+*.vspscc
+*.vssscc
+_ReSharper*/
+
+# Test results
+TestResults/
