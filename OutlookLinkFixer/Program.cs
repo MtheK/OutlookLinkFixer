@@ -108,7 +108,7 @@ public class HotkeyContext : ApplicationContext
                 var menu = new ContextMenuStrip();
                 var itemFile = new ToolStripMenuItem("Datei öffnen");
                 var itemFolder = new ToolStripMenuItem("Ordner öffnen");
-                var itemCancel = new ToolStripMenuItem("Abbrechen / Pfad kopieren");
+                var itemCancel = new ToolStripMenuItem("Abbrechen / Pfad kopieren (3)");
                 itemFile.Click += (s, e2) => {
                     try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); } catch (Exception ex) { MessageBox.Show("Fehler beim Öffnen der Datei: " + ex.Message); }
                     menu.Close();
@@ -144,10 +144,23 @@ public class HotkeyContext : ApplicationContext
                     if (e2.KeyCode == Keys.Escape) menu.Close();
                 };
 
-                // Nach 3 Sekunden automatisch schließen
+
+                // Countdown-Anzeige für "Abbrechen / Pfad kopieren"
+                int countdown = 3;
                 var timer = new System.Windows.Forms.Timer();
-                timer.Interval = 3000;
-                timer.Tick += (s, e2) => { timer.Stop(); menu.Close(); };
+                timer.Interval = 1000;
+                timer.Tick += (s, e2) => {
+                    countdown--;
+                    if (countdown > 0)
+                    {
+                        itemCancel.Text = $"Abbrechen / Pfad kopieren ({countdown})";
+                    }
+                    else
+                    {
+                        timer.Stop();
+                        menu.Close();
+                    }
+                };
                 menu.Opening += (s, e2) => timer.Start();
                 menu.Closed += (s, e2) => timer.Stop();
 
