@@ -72,7 +72,30 @@ public class HotkeyContext : ApplicationContext
             suppressNextPopup = false;
 
             string path = ClipboardPathParser.Parse(text);
-            if (!string.IsNullOrEmpty(path) && (System.IO.Directory.Exists(path) || System.IO.File.Exists(path)))
+            string menuTarget = null;
+            bool fileExists = false;
+            bool dirExists = false;
+            if (!string.IsNullOrEmpty(path))
+            {
+                fileExists = System.IO.File.Exists(path);
+                dirExists = System.IO.Directory.Exists(path);
+                if (fileExists || dirExists)
+                {
+                    menuTarget = path;
+                }
+                else
+                {
+                    // Wenn Datei nicht existiert, aber der Ordner existiert, Menü für Ordner anzeigen
+                    string folder = System.IO.Path.GetDirectoryName(path);
+                    if (!string.IsNullOrEmpty(folder) && System.IO.Directory.Exists(folder))
+                    {
+                        menuTarget = folder;
+                        dirExists = true;
+                        fileExists = false;
+                    }
+                }
+            }
+            if (!string.IsNullOrEmpty(menuTarget))
             {
                 var menu = new ContextMenuStrip();
                 var itemFile = new ToolStripMenuItem("Datei öffnen");
@@ -84,7 +107,7 @@ public class HotkeyContext : ApplicationContext
                 };
                 itemFolder.Click += (s, e2) => {
                     try {
-                        string folder = System.IO.Directory.Exists(path) ? path : System.IO.Path.GetDirectoryName(path);
+                        string folder = dirExists ? menuTarget : System.IO.Path.GetDirectoryName(menuTarget);
                         if (!string.IsNullOrEmpty(folder))
                             Process.Start(new ProcessStartInfo("explorer.exe", folder));
                         else
@@ -99,7 +122,7 @@ public class HotkeyContext : ApplicationContext
                     } catch { }
                     menu.Close();
                 };
-                if (System.IO.Directory.Exists(path)) itemFile.Enabled = false;
+                if (dirExists) itemFile.Enabled = false;
                 menu.Items.Add(itemFile);
                 menu.Items.Add(itemFolder);
                 menu.Items.Add(new ToolStripSeparator());

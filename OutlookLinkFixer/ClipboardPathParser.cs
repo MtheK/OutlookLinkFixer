@@ -5,8 +5,29 @@ public static class ClipboardPathParser
 {
     public static string Parse(string text)
     {
+
+
         if (string.IsNullOrWhiteSpace(text)) return string.Empty;
         string path = text.Trim();
+
+        // NEU: Wenn ein Text in Anführungszeichen steht, extrahiere den ersten in Anführungszeichen stehenden Teil
+        int quoteStart = path.IndexOf('"');
+        if (quoteStart >= 0)
+        {
+            int quoteEnd = path.IndexOf('"', quoteStart + 1);
+            if (quoteEnd > quoteStart)
+            {
+                path = path.Substring(quoteStart + 1, quoteEnd - quoteStart - 1).Trim();
+            }
+        }
+
+        // Spezialfall: https://outlook.office.com/local/path/file://Ardianet.net/de/3_SA/...
+        if (path.StartsWith("https://outlook.office.com/local/path/file://Ardianet.net/", StringComparison.OrdinalIgnoreCase))
+        {
+            string rest = path.Substring("https://outlook.office.com/local/path/file://Ardianet.net/".Length);
+            rest = Uri.UnescapeDataString(rest.Replace('/', '\\'));
+            return "\\\\ardianet.net\\" + rest;
+        }
 
         // Spezialfall: ardianet.net-Links als UNC-Pfad umwandeln
         if (path.StartsWith("http://ardianet.net/", StringComparison.OrdinalIgnoreCase))
