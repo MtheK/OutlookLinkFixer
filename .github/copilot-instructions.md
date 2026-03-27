@@ -28,18 +28,23 @@ See [README.md](../README.md#build--run) for more.
 - **Special handling** for ardianet.net links (mapped to UNC paths)
 - **Modern WinForms UI** (ContextMenuStrip, Win11-like)
 - **No endless clipboard loops** (see ARCHITEKTUR.md)
+- **Advanced path recognition:**
+  - Recognizes file paths in quotation marks within text (e.g. "T:\...\file.txt").
+  - Extracts and parses file:// fragments from any link (e.g. Outlook Web links).
+  - If a file does not exist, but the folder does, the menu is shown for the folder.
+  - See [ClipboardPathParser.cs](../OutlookLinkFixer/ClipboardPathParser.cs) and [Program.cs](../OutlookLinkFixer/Program.cs) for details.
 
 ---
 
 ## Documentation
-- [README.md](../README.md): Features, build/run, limitations
-- [ARCHITEKTUR.md](../OutlookLinkFixer/ARCHITEKTUR.md): Architecture, design decisions
+- [README.md](../README.md): User-facing features, build/run, limitations
+- [ARCHITEKTUR.md](../OutlookLinkFixer/ARCHITEKTUR.md): Architecture, design decisions, parsing logic
 
 ---
 
 ## When in doubt
 - **Link to documentation** above rather than duplicating details
-- If a convention or pitfall is not covered, prefer modern, idiomatic C#/.NET 8 and WinForms practices
+- Avoid duplicating feature/architecture explanations—keep user-facing info in README, technische Details in ARCHITEKTUR.md, and reference both here.
 - For new features, update this file and [ARCHITEKTUR.md](../OutlookLinkFixer/ARCHITEKTUR.md) as needed
 
 ---

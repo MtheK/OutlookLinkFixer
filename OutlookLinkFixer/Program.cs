@@ -61,17 +61,25 @@ public class HotkeyContext : ApplicationContext
             string text = Clipboard.GetText();
             if (suppressNextPopup)
             {
-                suppressNextPopup = false;
-                lastClipboardText = text;
-                return;
+                // Popup unterdrücken, aber suppressNextPopup erst zurücksetzen, wenn sich der Clipboard-Inhalt geändert hat
+                if (lastClipboardText == text)
+                {
+                    return;
+                }
+                else
+                {
+                    suppressNextPopup = false;
+                }
             }
             //if (lastClipboardText == text)
             //    return;
 
-            lastClipboardText = text;
+
             suppressNextPopup = false;
 
             string path = ClipboardPathParser.Parse(text);
+            lastClipboardText = path;
+
             string menuTarget = null;
             bool fileExists = false;
             bool dirExists = false;
