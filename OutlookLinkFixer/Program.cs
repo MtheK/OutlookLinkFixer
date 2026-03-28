@@ -4,6 +4,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Diagnostics;
+using OutlookLinkFixer;
 
 public class HotkeyContext : ApplicationContext
 {
@@ -33,31 +34,62 @@ public class HotkeyContext : ApplicationContext
 
     private string lastClipboardText = null;
     private bool suppressNextPopup = false;
+    private AppSettings settings;
     public HotkeyContext()
     {
+        // Settings laden
+        settings = AppSettings.Load();
+
         // Clipboard listener
         ClipboardNotification.ClipboardUpdate += OnClipboardUpdate;
 
         // Tray-Icon und Menü
         trayMenu = new ContextMenuStrip();
-        trayMenu.Items.Add("Info", null, (s, e) => MessageBox.Show("Lokale Links Öffner\nKopieren eines Pfads zeigt Popup", "Info"));
+        trayMenu.Items.Add("Einstellungen...", null, (s, e) => {
+            using (var dlg = new SettingsForm(settings))
+            {
+                if (dlg.ShowDialog() == DialogResult.OK)
+                {
+                    settings = AppSettings.Load();
+                }
+            }
+        });
+        //trayMenu.Items.Add("Info", null, (s, e) => MessageBox.Show("Lokale Links Öffner\nKopieren eines Pfads zeigt Popup", "Info"));
         trayMenu.Items.Add("Beenden", null, (s, e) => ExitThread());
 
         trayIcon = new NotifyIcon()
         {
             Icon = SystemIcons.Application,
             ContextMenuStrip = trayMenu,
-            Text = "Lokale Links Öffner",
+            Text = "OutlookLinkFixer",
             Visible = true
         };
+        trayIcon.MouseDoubleClick += TrayIcon_MouseDoubleClick;
+    }
+
+    private void TrayIcon_MouseDoubleClick(object sender, MouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Left)
+        {
+            using (var dlg = new SettingsForm(settings))
+            {
+                if (dlg.ShowDialog() == DialogResult.OK)
+                {
+                    settings = AppSettings.Load();
+                }
+            }
+        }
     }
 
     private void OnClipboardUpdate(object sender, EventArgs e)
     {
         try
         {
-            if (!IsOutlookOrVSCodeActive())
+            if (!IsSelectedProgramActive())
+            {
                 return;
+            }
+
             string text = Clipboard.GetText();
             if (suppressNextPopup)
             {
@@ -108,52 +140,66 @@ public class HotkeyContext : ApplicationContext
                 var menu = new ContextMenuStrip();
                 var itemFile = new ToolStripMenuItem("Datei öffnen");
                 var itemFolder = new ToolStripMenuItem("Ordner öffnen");
-                var itemCancel = new ToolStripMenuItem("Abbrechen / Pfad kopieren (3)");
-                itemFile.Click += (s, e2) => {
+                var itemCopy = new ToolStripMenuItem("Pfad kopieren");
+                var itemCancel = new ToolStripMenuItem($"Abbrechen ({settings.TimeoutSeconds})");
+                itemFile.Click += (s, e2) =>
+                {
                     try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); } catch (Exception ex) { MessageBox.Show("Fehler beim Öffnen der Datei: " + ex.Message); }
                     menu.Close();
                 };
-                itemFolder.Click += (s, e2) => {
-                    try {
+                itemFolder.Click += (s, e2) =>
+                {
+                    try
+                    {
                         string folder = dirExists ? menuTarget : System.IO.Path.GetDirectoryName(menuTarget);
                         if (!string.IsNullOrEmpty(folder))
                             Process.Start(new ProcessStartInfo("explorer.exe", folder));
                         else
                             MessageBox.Show("Ordnerpfad konnte nicht ermittelt werden.");
-                    } catch (Exception ex) { MessageBox.Show("Fehler beim Öffnen des Ordners: " + ex.Message); }
+                    }
+                    catch (Exception ex) { MessageBox.Show("Fehler beim Öffnen des Ordners: " + ex.Message); }
                     menu.Close();
                 };
-                itemCancel.Click += (s, e2) => {
+                itemCopy.Click += (s, e2) =>
+                {
                     try {
                         suppressNextPopup = true;
                         Clipboard.SetText(path);
                     } catch { }
                     menu.Close();
                 };
+                itemCancel.Click += (s, e2) =>
+                {
+                    suppressNextPopup = true;
+                    menu.Close();
+                };
                 if (dirExists) itemFile.Enabled = false;
                 menu.Items.Add(itemFile);
                 menu.Items.Add(itemFolder);
                 menu.Items.Add(new ToolStripSeparator());
+                menu.Items.Add(itemCopy);
                 menu.Items.Add(itemCancel);
 
                 // ESC schließt das Menü
-                menu.PreviewKeyDown += (s, e2) => {
+                menu.PreviewKeyDown += (s, e2) =>
+                {
                     if (e2.KeyCode == Keys.Escape) menu.Close();
                 };
-                menu.KeyDown += (s, e2) => {
+                menu.KeyDown += (s, e2) =>
+                {
                     if (e2.KeyCode == Keys.Escape) menu.Close();
                 };
 
-
-                // Countdown-Anzeige für "Abbrechen / Pfad kopieren"
-                int countdown = 3;
+                // Countdown-Anzeige für "Abbrechen"
+                int countdown = Math.Max(2, Math.Min(20, settings.TimeoutSeconds));
                 var timer = new System.Windows.Forms.Timer();
                 timer.Interval = 1000;
-                timer.Tick += (s, e2) => {
+                timer.Tick += (s, e2) =>
+                {
                     countdown--;
                     if (countdown > 0)
                     {
-                        itemCancel.Text = $"Abbrechen / Pfad kopieren ({countdown})";
+                        itemCancel.Text = $"Abbrechen ({countdown})";
                     }
                     else
                     {
@@ -172,8 +218,35 @@ public class HotkeyContext : ApplicationContext
         }
         catch { /* ignore clipboard errors */ }
     }
-// Clipboard notification helper
-public static class ClipboardNotification
+
+    private bool IsSelectedProgramActive()
+    {
+        // Programme prüfen
+        string[] progs = (settings.ProgramList ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(p => p.Trim().ToLowerInvariant()).Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
+        bool isActive = false;
+        IntPtr hwnd = GetForegroundWindow();
+        if (hwnd != IntPtr.Zero)
+        {
+            GetWindowThreadProcessId(hwnd, out uint pid);
+            try
+            {
+                var proc = Process.GetProcessById((int)pid);
+                string name = proc.ProcessName.ToLowerInvariant();
+                if (settings.ExcludeMode)
+                    isActive = !progs.Any(p => name.Contains(p));
+                else
+                    isActive = progs.Any(p => name.Contains(p));
+            }
+            catch { }
+        }
+        if (!isActive)
+            return false;
+        return true;
+    }
+
+    // Clipboard notification helper
+    public static class ClipboardNotification
 {
     public static event EventHandler ClipboardUpdate;
     private static NotificationForm form = new NotificationForm();
@@ -217,8 +290,18 @@ static class Program
     [STAThread]
     static void Main()
     {
-        Application.EnableVisualStyles();
-        Application.SetCompatibleTextRenderingDefault(false);
-        Application.Run(new HotkeyContext());
+        Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
+        bool createdNew;
+        using (var mutex = new System.Threading.Mutex(true, "OutlookLinkFixer_Mutex", out createdNew))
+        {
+            if (!createdNew)
+            {
+                MessageBox.Show("OutlookLinkFixer läuft bereits.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new HotkeyContext());
+        }
     }
 }
