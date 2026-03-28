@@ -3,6 +3,7 @@ namespace OutlookLinkFixer
     partial class SettingsForm : System.Windows.Forms.Form
     {
         private System.ComponentModel.IContainer components = null;
+        private System.Windows.Forms.Label labelVersion;
         private System.Windows.Forms.NumericUpDown numericTimeout;
         private System.Windows.Forms.TextBox textPrograms;
         private System.Windows.Forms.RadioButton radioExclude;
@@ -42,6 +43,16 @@ namespace OutlookLinkFixer
             ((System.ComponentModel.ISupportInitialize)(this.numericTimeout)).BeginInit();
             this.groupMode.SuspendLayout();
             this.SuspendLayout();
+            // 
+            // labelVersion
+            // 
+            this.labelVersion = new System.Windows.Forms.Label();
+            this.labelVersion.Location = new System.Drawing.Point(180, 255);
+            this.labelVersion.Size = new System.Drawing.Size(130, 18);
+            this.labelVersion.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.labelVersion.Name = "labelVersion";
+            this.labelVersion.TabIndex = 99;
+            this.labelVersion.Text = "Version: " + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString();
             // 
             // numericTimeout
             // 
@@ -138,6 +149,7 @@ namespace OutlookLinkFixer
             this.Controls.Add(this.btnOK);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.linkRepo);
+            this.Controls.Add(this.labelVersion);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;

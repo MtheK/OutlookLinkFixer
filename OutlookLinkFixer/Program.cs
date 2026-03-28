@@ -80,6 +80,41 @@ public class HotkeyContext : ApplicationContext
             trayIcon.BalloonTipText = "Das Programm ist im Infobereich (Tray) zu finden.";
             trayIcon.ShowBalloonTip(7000);
             MessageBox.Show("OutlookLinkFixer läuft jetzt im Hintergrund. Das Symbol findest du im Infobereich (Tray) neben der Uhr.", "Hinweis", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            // Autostart-Frage nur beim ersten Start und nur einmal stellen
+            if (!settings.AutostartAsked)
+            {
+                var result = MessageBox.Show(
+                    "Soll OutlookLinkFixer automatisch mit Windows starten?\n\n" +
+                    "(Du kannst das auch später jederzeit in den Einstellungen ändern.)",
+                    "Autostart einrichten?",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+                if (result == DialogResult.Yes)
+                {
+                    try
+                    {
+                        string exePath = Application.ExecutablePath;
+                        string shortcutPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "OutlookLinkFixer.lnk");
+                        var shell = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell"));
+                        if (shell != null)
+                        {
+                            var shortcut = shell.GetType().InvokeMember("CreateShortcut", System.Reflection.BindingFlags.InvokeMethod, null, shell, new object[] { shortcutPath });
+                            if (shortcut != null)
+                            {
+                                shortcut.GetType().InvokeMember("TargetPath", System.Reflection.BindingFlags.SetProperty, null, shortcut, new object[] { exePath });
+                                shortcut.GetType().InvokeMember("WorkingDirectory", System.Reflection.BindingFlags.SetProperty, null, shortcut, new object[] { System.IO.Path.GetDirectoryName(exePath) });
+                                shortcut.GetType().InvokeMember("Save", System.Reflection.BindingFlags.InvokeMethod, null, shortcut, null);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Autostart konnte nicht eingerichtet werden: " + ex.Message);
+                    }
+                }
+                settings.AutostartAsked = true;
+            }
             settings.FirstRun = false;
             settings.Save();
         }

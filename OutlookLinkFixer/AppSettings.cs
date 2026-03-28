@@ -4,6 +4,7 @@ using System.Text.Json;
 
 public class AppSettings
 {
+    public bool AutostartAsked { get; set; } = false;
     public bool FirstRun { get; set; } = true;
     public int TimeoutSeconds { get; set; } = 3;
     public string ProgramList { get; set; } = "outlook,olk,code";
