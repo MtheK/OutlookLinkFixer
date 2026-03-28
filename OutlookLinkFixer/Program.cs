@@ -40,10 +40,7 @@ public class HotkeyContext : ApplicationContext
         // Settings laden
         settings = AppSettings.Load();
 
-        // Clipboard listener
-        ClipboardNotification.ClipboardUpdate += OnClipboardUpdate;
-
-        // Tray-Icon und Menü
+        // Tray-Icon und Menü vorbereiten
         trayMenu = new ContextMenuStrip();
         trayMenu.Items.Add("Einstellungen...", null, (s, e) => {
             using (var dlg = new SettingsForm(settings))
@@ -57,14 +54,43 @@ public class HotkeyContext : ApplicationContext
         //trayMenu.Items.Add("Info", null, (s, e) => MessageBox.Show("Lokale Links Öffner\nKopieren eines Pfads zeigt Popup", "Info"));
         trayMenu.Items.Add("Beenden", null, (s, e) => ExitThread());
 
+        // Icon laden
+        System.Drawing.Icon appIcon = null;
+        try
+        {
+            string iconPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "icon.ico");
+            if (System.IO.File.Exists(iconPath))
+                appIcon = new System.Drawing.Icon(iconPath);
+        }
+        catch { }
+
         trayIcon = new NotifyIcon()
         {
-            Icon = SystemIcons.Application,
+            Icon = appIcon ?? SystemIcons.Application,
             ContextMenuStrip = trayMenu,
             Text = "OutlookLinkFixer",
             Visible = true
         };
         trayIcon.MouseDoubleClick += TrayIcon_MouseDoubleClick;
+
+        // Beim ersten Start Hinweis anzeigen
+        if (settings.FirstRun)
+        {
+            trayIcon.BalloonTipTitle = "OutlookLinkFixer läuft";
+            trayIcon.BalloonTipText = "Das Programm ist im Infobereich (Tray) zu finden.";
+            trayIcon.ShowBalloonTip(7000);
+            MessageBox.Show("OutlookLinkFixer läuft jetzt im Hintergrund. Das Symbol findest du im Infobereich (Tray) neben der Uhr.", "Hinweis", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            settings.FirstRun = false;
+            settings.Save();
+        }
+
+        // Versuche Tray-Icon hervorzuheben (BalloonTip), falls es im versteckten Bereich ist
+        trayIcon.BalloonTipTitle = "OutlookLinkFixer läuft";
+        trayIcon.BalloonTipText = "Das Programm ist im Infobereich (Tray) zu finden.";
+        trayIcon.ShowBalloonTip(4000);
+
+        // Clipboard listener
+        ClipboardNotification.ClipboardUpdate += OnClipboardUpdate;
     }
 
     private void TrayIcon_MouseDoubleClick(object sender, MouseEventArgs e)

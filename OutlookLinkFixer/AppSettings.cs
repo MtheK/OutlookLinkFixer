@@ -4,6 +4,7 @@ using System.Text.Json;
 
 public class AppSettings
 {
+    public bool FirstRun { get; set; } = true;
     public int TimeoutSeconds { get; set; } = 3;
     public string ProgramList { get; set; } = "outlook,olk,code";
     public bool ExcludeMode { get; set; } = false; // true = exclude, false = include

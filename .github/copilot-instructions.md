@@ -1,7 +1,7 @@
 # OutlookLinkFixer – Copilot Workspace Instructions
 
 ## Purpose
-This file provides guidance for AI agents (e.g., GitHub Copilot) working in this repository. It summarizes key conventions, build/run instructions, and architectural decisions. **Link, don’t embed**: For details, see [README.md](../README.md) and [ARCHITEKTUR.md](../OutlookLinkFixer/ARCHITEKTUR.md).
+This file provides guidance for AI agents (e.g., GitHub Copilot) working in this repository. It summarizes key conventions, build/run instructions, and architectural decisions. **Link, don’t embed**: For user-facing info, see [README.md](../README.md); for developer/build/architecture, see [DEVNOTES.md](../DEVNOTES.md) and [ARCHITEKTUR.md](../OutlookLinkFixer/ARCHITEKTUR.md).
 
 ---
 

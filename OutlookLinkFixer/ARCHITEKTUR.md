@@ -1,4 +1,8 @@
+
 # OutlookLinkFixer – Entscheidungs- und Architekturnotizen
+
+**Hinweis für Entwickler:**
+Build/Deployment/Dev-Infos siehe [DEVNOTES.md](../DEVNOTES.md)
 
 - Popup für Datei/Ordner-Aktionen wird als ContextMenuStrip (wie Tray-Menü) angezeigt, nicht mehr als eigenes Form.
 - Menü enthält: "Datei öffnen", "Ordner öffnen", "Abbrechen / Pfad kopieren" (kopiert Pfad in die Zwischenablage, öffnet aber nichts).
