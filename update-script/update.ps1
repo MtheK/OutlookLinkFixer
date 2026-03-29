@@ -52,6 +52,9 @@ if (-not $localVersion) {
 }
 
 if (-not $needsUpdate) {
+    Write-Host ""
+    Write-Host "Drücken Sie eine Taste zum Beenden ..."
+    [void][System.Console]::ReadKey($true)
     exit 0
 }
 
@@ -59,12 +62,15 @@ if (-not $needsUpdate) {
 $asset = $releaseInfo.assets | Where-Object { $_.name -eq $assetName }
 if (-not $asset) {
     Write-Host "[Updater] Release-Asset $assetName nicht gefunden!"
+    Write-Host ""
+    Write-Host "Drücken Sie eine Taste zum Beenden ..."
+    [void][System.Console]::ReadKey($true)
     exit 1
 }
 $zipUrl = $asset.browser_download_url
 $tmpZip = Join-Path $env:TEMP "OutlookLinkFixer_update.zip"
 Write-Host "[Updater] Lade ZIP von $zipUrl ..."
-Invoke-WebRequest -Uri $zipUrl -OutFile $tmpZip
+Invoke-WebRequest -Uri $zipUrl -OutFile $tmpZip -Headers @{ 'Cache-Control' = 'no-cache' }
 
 # --- OutlookLinkFixer beenden ---
 Write-Host "[Updater] Beende laufende OutlookLinkFixer.exe ..."
