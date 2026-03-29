@@ -82,4 +82,7 @@ Write-Host "[Updater] Starte OutlookLinkFixer.exe ..."
 Start-Process $exePath
 
 Write-Host "[Updater] Update abgeschlossen."
+Write-Host ""
+Write-Host "Drücken Sie eine Taste zum Beenden ..."
+[void][System.Console]::ReadKey($true)
 exit 0
