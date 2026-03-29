@@ -7,7 +7,7 @@ public class AppSettings
     public bool AutostartAsked { get; set; } = false;
     public bool FirstRun { get; set; } = true;
     public int TimeoutSeconds { get; set; } = 3;
-    public string ProgramList { get; set; } = "outlook,olk,code";
+    public string ProgramList { get; set; } = "outlook,olk,code,teams";
     public bool ExcludeMode { get; set; } = false; // true = exclude, false = include
 
     public static string SettingsPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json");

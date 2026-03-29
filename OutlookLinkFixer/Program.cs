@@ -14,21 +14,6 @@ public class HotkeyContext : ApplicationContext
     [DllImport("user32.dll", SetLastError = true)]
     private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
-    private static bool IsOutlookOrVSCodeActive()
-    {
-        IntPtr hwnd = GetForegroundWindow();
-        if (hwnd == IntPtr.Zero) return false;
-        GetWindowThreadProcessId(hwnd, out uint pid);
-        try
-        {
-            var proc = Process.GetProcessById((int)pid);
-            string name = proc.ProcessName.ToLowerInvariant();
-            // Outlook klassisch: OUTLOOK, neues Outlook: olk.exe oder outlook.exe, VS Code: Code
-            return name.Contains("outlook") || name.Contains("olk") || name.Contains("code");
-        }
-        catch { return false; }
-    }
-
     private NotifyIcon trayIcon;
     private ContextMenuStrip trayMenu;
 
@@ -173,9 +158,11 @@ public class HotkeyContext : ApplicationContext
             string path = ClipboardPathParser.Parse(text);
             lastClipboardText = path;
 
+            string openFileText = "Datei öffnen";
             string menuTarget = null;
             bool fileExists = false;
             bool dirExists = false;
+
             if (!string.IsNullOrEmpty(path))
             {
                 fileExists = System.IO.File.Exists(path);
@@ -190,24 +177,28 @@ public class HotkeyContext : ApplicationContext
                     string folder = System.IO.Path.GetDirectoryName(path);
                     if (!string.IsNullOrEmpty(folder) && System.IO.Directory.Exists(folder))
                     {
+                        openFileText = "Datei existiert nicht";
                         menuTarget = folder;
                         dirExists = true;
                         fileExists = false;
                     }
                 }
             }
+
             if (!string.IsNullOrEmpty(menuTarget))
             {
                 var menu = new ContextMenuStrip();
-                var itemFile = new ToolStripMenuItem("Datei öffnen");
+                var itemFile = new ToolStripMenuItem(openFileText);
                 var itemFolder = new ToolStripMenuItem("Ordner öffnen");
                 var itemCopy = new ToolStripMenuItem("Pfad kopieren");
                 var itemCancel = new ToolStripMenuItem($"Abbrechen ({settings.TimeoutSeconds})");
+
                 itemFile.Click += (s, e2) =>
                 {
                     try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); } catch (Exception ex) { MessageBox.Show("Fehler beim Öffnen der Datei: " + ex.Message); }
                     menu.Close();
                 };
+
                 itemFolder.Click += (s, e2) =>
                 {
                     try
@@ -221,6 +212,7 @@ public class HotkeyContext : ApplicationContext
                     catch (Exception ex) { MessageBox.Show("Fehler beim Öffnen des Ordners: " + ex.Message); }
                     menu.Close();
                 };
+
                 itemCopy.Click += (s, e2) =>
                 {
                     try {
@@ -229,11 +221,13 @@ public class HotkeyContext : ApplicationContext
                     } catch { }
                     menu.Close();
                 };
+
                 itemCancel.Click += (s, e2) =>
                 {
                     suppressNextPopup = true;
                     menu.Close();
                 };
+
                 if (dirExists) itemFile.Enabled = false;
                 menu.Items.Add(itemFile);
                 menu.Items.Add(itemFolder);

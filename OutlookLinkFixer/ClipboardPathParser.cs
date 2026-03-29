@@ -38,6 +38,7 @@ public static class ClipboardPathParser
         }
         
         // Falls eckige Klammern vorkommen, nur Inhalt in erster Klammer verwenden
+        // TODO: führt dazu dass Dateien mit eckigen Klammern im Namen nicht korrekt erkannt werden, z.B. "C:\Test\[Datei].txt" -> "Datei].txt"
         int open = path.IndexOf('[');
         int close = path.IndexOf(']', open + 1);
         if (open >= 0 && close > open)

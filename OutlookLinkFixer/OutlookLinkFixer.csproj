@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -13,6 +13,7 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <PublishTrimmed>false</PublishTrimmed>
     <IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,8 +21,29 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <EmbeddedResource Include="icon.ico" />
+    <!-- <Content Include="..\update-script\update.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>update.ps1</Link>
+    </Content> ... wird über bat gebootstrapped -->
+    <Content Include="..\update-script\update.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>update.bat</Link>
+    </Content>
   </ItemGroup>
-  <PropertyGroup>
-    <ApplicationIcon>icon.ico</ApplicationIcon>
-  </PropertyGroup>
+
+  <Target Name="RemovePdbAfterPublishAndZip" AfterTargets="Publish">
+    <Delete Files="$(PublishDir)OutlookLinkFixer.pdb" />
+    <Delete Files="$(PublishDir)settings.json" />
+
+    <PropertyGroup>
+      <_ZipFileName>$(PublishDir)..\OutlookLinkFixer_v$(Version).zip</_ZipFileName>
+    </PropertyGroup>
+    <ItemGroup>
+      <_PublishFiles Include="$(PublishDir)**\*.*" />
+    </ItemGroup>
+    <ZipDirectory
+      SourceDirectory="$(PublishDir)"
+      DestinationFile="$(_ZipFileName)" />
+  </Target>
+
 </Project>
