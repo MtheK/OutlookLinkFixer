@@ -1,14 +1,21 @@
 using System;
+using System.Text.RegularExpressions;
 
 // Helper for parsing clipboard text to a file or directory path
 public static class ClipboardPathParser
 {
     public static string Parse(string text)
     {
-
-
         if (string.IsNullOrWhiteSpace(text)) return string.Empty;
         string path = text.Trim();
+
+        // NEU: Pfade aus Fließtext extrahieren (außerhalb von "..." und [...])
+        string extracted = ExtractPathFromText(path);
+        if (!string.IsNullOrEmpty(extracted))
+        {
+            path = extracted;
+            Console.WriteLine($"Extracted path from text: {path}");
+        }
 
         // NEU: Wenn ein Text in Anführungszeichen steht, extrahiere den ersten in Anführungszeichen stehenden Teil
         int quoteStart = path.IndexOf('"');
@@ -19,6 +26,7 @@ public static class ClipboardPathParser
             {
                 path = path.Substring(quoteStart + 1, quoteEnd - quoteStart - 1).Trim();
             }
+            Console.WriteLine($"Extracted path from quotes: {path}");
         }
 
         // Spezialfall: https://outlook.office.com/local/path/file://Ardianet.net/de/3_SA/...
@@ -26,6 +34,7 @@ public static class ClipboardPathParser
         {
             string rest = path.Substring("https://outlook.office.com/local/path/file://Ardianet.net/".Length);
             rest = Uri.UnescapeDataString(rest.Replace('/', '\\'));
+            Console.WriteLine($"Detected Outlook local path, converted to: \\\\ardianet.net\\{rest}");
             return "\\\\ardianet.net\\" + rest;
         }
 
@@ -34,6 +43,7 @@ public static class ClipboardPathParser
         {
             string rest = path.Substring("http://ardianet.net/".Length);
             rest = Uri.UnescapeDataString(rest.Replace('/', '\\'));
+            Console.WriteLine($"Detected ardianet.net link, converted to: \\\\ardianet.net\\{rest}");
             return "\\\\ardianet.net\\" + rest;
         }
         
@@ -44,8 +54,8 @@ public static class ClipboardPathParser
         if (open >= 0 && close > open)
         {
             path = path.Substring(open + 1, close - open - 1).Trim();
+            Console.WriteLine($"Extracted path from brackets: {path}");
         }
-
         // Remove file:// or file:/// prefix if present
         if (path.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
         {
@@ -64,6 +74,7 @@ public static class ClipboardPathParser
             {
                 path = path.Substring(8);
             }
+            Console.WriteLine($"Removed file:// prefix, path is now: {path}");
         }
 
         // Sonderfall: http(s) vorangestellt (z.B. http://// oder http://\\)
@@ -80,6 +91,7 @@ public static class ClipboardPathParser
             {
                 path = "\\" + path.TrimStart('/');
             }
+            Console.WriteLine($"Converted HTTP path to UNC: {path}");
         }
 
         // Netzlaufwerk: beginne mit doppeltem Backslash (nur wenn schon Backslashes vorhanden)
@@ -88,6 +100,33 @@ public static class ClipboardPathParser
         // Convert forward slashes to backslashes
         path = path.Replace("/", "\\");
 
+        Console.WriteLine($"Final parsed path: {path}");
         return path;
+    }
+
+    private static string ExtractPathFromText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return string.Empty;
+
+        // Inhalte in "..." und [...] entfernen (nur für Suche!)
+        string search = Regex.Replace(text, @"""[^""]*""|\[[^\]]*\]", " ");
+
+        var match = Regex.Match(
+            search,
+            // @"(?:\\\\[^\s""<>|]+|[A-Za-z]:\\[^\s""<>|]+)(?:\\[^\s""<>|]+)*"  // ohne Leerzeichen im Pfad
+            @"(?:\\\\[^""<>|]+|[A-Za-z]:\\[^""<>|]+)(?:\\[^""<>|]+)*"           // mit Leerzeichen im Pfad
+        );
+        Console.WriteLine($"Extracting path from text. Search string: '{search}', Match found: '{match.Value}'");
+
+        return match.Success
+            //? TrimTrailingPunctuation(match.Value)
+            ? TrimTrailingPunctuation(match.Value)
+            : string.Empty;
+    }
+
+    private static string TrimTrailingPunctuation(string path)
+    { 
+        return path.TrimEnd('.', ',', ';', '!', '?'); 
     }
 }
